@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/config"
@@ -17,6 +18,7 @@ type Message struct {
 
 type Payload struct {
 	Email   string `json:"email"`
+	Header  string `json:"header"`
 	Message string `json:"message"`
 }
 
@@ -24,18 +26,25 @@ type Broker struct {
 	broker *kafka.Consumer
 	log    *slog.Logger
 	done   chan struct{}
+	ticker *time.Ticker
 }
 
 type Consumer interface {
-	Run() chan Message
+	Run() chan Payload
 	Stop()
 }
 
-func New(log *slog.Logger, cfg *config.Config) *Broker {
+const (
+	timeout = time.Millisecond * 100
+)
+
+func New(log *slog.Logger, cfg *config.KafkaConfig) *Broker {
+	const op = "app.kafka.app.Run"
+	log.With(slog.String("op", op)).Info("start kafka consumer")
 
 	c, err := kafka.NewConsumer(
 		&kafka.ConfigMap{
-			"bootstrap.servers":  fmt.Sprintf("%s:%s", cfg.Kafka.Host, cfg.Kafka.Port),
+			"bootstrap.servers":  fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 			"group.id":           "kafka-consumer",
 			"auto.offset.reset":  "smallest",
 			"enable.auto.commit": "true",
@@ -45,53 +54,59 @@ func New(log *slog.Logger, cfg *config.Config) *Broker {
 		panic(err)
 	}
 
-	err = c.Subscribe(cfg.Kafka.Topic, nil)
+	err = c.Subscribe(cfg.Topic, nil)
 	if err != nil {
 		panic(err)
 	}
 
+	ticker := time.NewTicker(timeout)
 	done := make(chan struct{})
 
 	return &Broker{
 		broker: c,
 		log:    log,
 		done:   done,
+		ticker: ticker,
 	}
 }
 
-func (b *Broker) Run() chan Message {
-	const op = "app.kafka.app.GetFromQueue"
+func (b *Broker) Run() chan Payload {
+	const op = "app.kafka.app.Run"
 	log := b.log.With(slog.String("op", op))
 
-	msgch := make(chan Message)
+	msgch := make(chan Payload)
 
 	go func() {
 		for {
-			ev := b.broker.Poll(100)
-			switch e := ev.(type) {
-			case *kafka.Message:
-				var data Message
-				err := json.Unmarshal(e.Value, &data)
-				if err != nil{
-					log.Error("error unmarshalling", op, slerr.Err(err))
+			select {
+			case <- b.done:
+				return
+			case <- b.ticker.C:
+				ev := b.broker.Poll(100)
+				switch e := ev.(type) {
+				case *kafka.Message:
+					var data Message
+					err := json.Unmarshal(e.Value, &data)
+					if err != nil {
+						log.Error("error unmarshalling", op, slerr.Err(err))
+					}
+					msgch <- data.Payload
+				case kafka.Error:
+					log.Error("error while sending message", slerr.Err(e))
 				}
-				msgch <- data
-				// fmt.Printf("<<= Message: %s\n", string(e.Value))
-			case kafka.Error:
-				log.Error("error while sending message", slerr.Err(e))
 			}
 		}
-	}()
-
-	go func() {
-		<-b.done
-		close(msgch)
 	}()
 
 	return msgch
 }
 
 func (b *Broker) Stop() {
+	const op = "app.kafka.app.Stop"
+	log := b.log.With(slog.String("op", op))
+	log.Info("stop kafka client")
+
 	close(b.done)
-	b.broker.Close()
+	defer b.ticker.Stop()
+	defer b.broker.Close()
 }
