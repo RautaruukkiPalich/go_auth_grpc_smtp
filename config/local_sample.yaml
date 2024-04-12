@@ -1,0 +1,11 @@
+env: "local"
+smtp: 
+  addr: "your mail full addr with port" #"smtp.mail.ru:2525"
+  host: "your mail addr without port"   #"smtp.mail.ru"
+  from: "email in from"                 #"example@example.ru"
+  user: "email"                         #"example@example.ru"
+  pass: "token"                         #"amsffusa8fHF8AF"
+kafka:
+  host: "localhost"
+  port: 29092
+  topic: "mail"
