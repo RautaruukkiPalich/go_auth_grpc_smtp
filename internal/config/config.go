@@ -14,11 +14,11 @@ type Config struct {
 }
 
 type SMTPConfig struct {
-	Addr string `yaml:"addr"`
-	Host string `yaml:"host"`
-	From string `yaml:"from"`
-	Pass string `yaml:"pass"`
-	User string `yaml:"user"`
+	Addr   string `yaml:"addr"`
+	Host   string `yaml:"host"`
+	From   string `yaml:"from"`
+	Pass   string `yaml:"pass"`
+	User   string `yaml:"user"`
 }
 
 type KafkaConfig struct {
