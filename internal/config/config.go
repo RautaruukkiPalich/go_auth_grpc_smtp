@@ -14,17 +14,18 @@ type Config struct {
 }
 
 type SMTPConfig struct {
-	Addr   string `yaml:"addr"`
-	Host   string `yaml:"host"`
-	From   string `yaml:"from"`
-	Pass   string `yaml:"pass"`
-	User   string `yaml:"user"`
+	Addr string `yaml:"addr"`
+	Host string `yaml:"host"`
+	From string `yaml:"from"`
+	Pass string `yaml:"pass"`
+	User string `yaml:"user"`
 }
 
 type KafkaConfig struct {
-	Host  string `yaml:"host"`
-	Port  string `yaml:"port"`
-	Topic string `yaml:"topic"`
+	Host          string `yaml:"host"`
+	Port          string `yaml:"port"`
+	ConsumerGroup string `yaml:"consumerGroup"`
+	Topic         string `yaml:"topic"`
 }
 
 func MustLoadConfig() *Config {

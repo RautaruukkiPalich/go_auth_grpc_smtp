@@ -35,7 +35,7 @@ type Consumer interface {
 }
 
 const (
-	timeout = time.Millisecond * 100
+	timeout = time.Millisecond * 1000
 )
 
 func New(log *slog.Logger, cfg *config.KafkaConfig) *Broker {
@@ -45,7 +45,7 @@ func New(log *slog.Logger, cfg *config.KafkaConfig) *Broker {
 	c, err := kafka.NewConsumer(
 		&kafka.ConfigMap{
 			"bootstrap.servers":  fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
-			"group.id":           "kafka-consumer",
+			"group.id":           cfg.ConsumerGroup,
 			"auto.offset.reset":  "smallest",
 			"enable.auto.commit": "true",
 		},
