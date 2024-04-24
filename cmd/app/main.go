@@ -6,8 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/config"
 	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/app"
+	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/config"
+	"github.com/rautaruukkipalich/prettyslog"
 )
 
 const (
@@ -41,9 +42,10 @@ func MustRunLogger(env string) *slog.Logger {
 	var log *slog.Logger
 	switch env {
 	case envLocal:
-		log = slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
+		// log = slog.New(
+		// 	slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		// )
+		log = prettyslog.NewPrettyLogger(" ")
 	case envDev:
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
