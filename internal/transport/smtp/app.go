@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"net/smtp"
 
-	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/app/kafka"
 	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/config"
 	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/lib/slerr"
+	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/model"
 )
 
 const (
@@ -42,7 +42,7 @@ func New(log *slog.Logger, cfg *config.SMTPConfig) *SMTPClient {
 	}
 }
 
-func (c *SMTPClient) Run(msgch chan kafka.Payload) {
+func (c *SMTPClient) Run(msgch chan model.Payload) {
 	const op = "app.smtp.app.Run"
 	log := c.log.With(slog.String("op", op))
 	log.Info("start SMTP client")
@@ -71,7 +71,7 @@ func (c *SMTPClient) Stop() {
 	defer close(c.done)
 }
 
-func (c *SMTPClient) sendMessage(msg *kafka.Payload) error {
+func (c *SMTPClient) sendMessage(msg *model.Payload) error {
 	const op = "app.smtp.app.sendMessage"
 	log := c.log.With(slog.String("op", op))
 	log.With(slog.String("email", msg.Email)).Info("send message")
@@ -90,7 +90,7 @@ func (c *SMTPClient) sendMessage(msg *kafka.Payload) error {
 	return nil
 }
 
-func (c *SMTPClient) prepareMessage(msg *kafka.Payload) (email, payload string, err error) {
+func (c *SMTPClient) prepareMessage(msg *model.Payload) (email, payload string, err error) {
 	const op = "app.smtp.app.prepareMessage"
 	log := c.log.With(slog.String("op", op))
 	log.With(slog.String("email", msg.Email)).Info("prepare message")
