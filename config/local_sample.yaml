@@ -8,4 +8,5 @@ smtp:
 kafka:
   host: "localhost"
   port: 29092
+  consumerGroup: "smtp"
   topic: "mail"
