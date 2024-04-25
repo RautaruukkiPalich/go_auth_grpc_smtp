@@ -3,25 +3,40 @@ package app
 import (
 	"log/slog"
 
-	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/app/kafka"
-	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/app/smtp"
 	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/config"
+	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/model"
+	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/transport/kafka"
+	"github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/transport/smtp/smtpmock"
+	// "github.com/rautaruukkipalich/go_auth_grpc_smtp/internal/transport/smtp"
 )
 
-type App struct {
-	SMTP *smtp.SMTPClient
-	Kafka kafka.Consumer
-	log *slog.Logger
+type Consumer interface {
+	Run() chan model.Payload
+	Stop()
 }
 
-func New(log *slog.Logger, cfg *config.Config) *App{
+type SMTPClient interface {
+	Run(msgch chan model.Payload)
+	Stop()
+}
+
+type App struct {
+	SMTP  SMTPClient
+	Kafka Consumer
+	log   *slog.Logger
+}
+
+func New(log *slog.Logger, cfg *config.Config) *App {
 	kafka := kafka.New(log, &cfg.Kafka)
-	smtp := smtp.New(log, &cfg.SMTP)
+	// smtp := smtp.New(log, &cfg.SMTP)
+	smtp := smtpmock.New(log, &cfg.SMTP)
+
+	smtpmock.New(log, &cfg.SMTP)
 
 	return &App{
-		SMTP: smtp,
+		SMTP:  smtp,
 		Kafka: kafka,
-		log: log,
+		log:   log,
 	}
 }
 
@@ -42,5 +57,3 @@ func (a *App) Stop() {
 	defer a.Kafka.Stop()
 	defer a.SMTP.Stop()
 }
-
-
